@@ -81,10 +81,10 @@ def test_as_rows(passing_stage, failing_stage, second_passing_stage):
 
 
 def test_triggers():
-    assert (now, [commit1, commit2], [commit3]) == commits_in_next_run([commit1, commit2, commit3], now)
-    assert (now, [commit1, commit2], []) == commits_in_next_run([commit1, commit2], now)
+    assert ([commit1, commit2], [commit3]) == commits_in_next_run([commit1, commit2, commit3], now)
+    assert ([commit1, commit2], []) == commits_in_next_run([commit1, commit2], now)
     new_now = now +timedelta(minutes=10)
-    assert (new_now, [commit3], []) == commits_in_next_run([commit3], new_now)
+    assert ([commit3], []) == commits_in_next_run([commit3], new_now)
 
 
 def test_several_runs(passing_stage):

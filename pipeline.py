@@ -78,7 +78,7 @@ class Pipeline:
         future_commits = commits
         while future_commits \
                 and (now < start_time + duration):
-            now, commits_this_run, future_commits = commits_in_next_run(future_commits, now)
+            commits_this_run, future_commits = commits_in_next_run(future_commits, now)
             stage_results = simulate_stage_results(self.stages, now)
             end_time = stage_results[-1].end_time
 
@@ -88,6 +88,8 @@ class Pipeline:
                               stage_results=[result.status for result in stage_results],
                               )
             now = now + self.stages[0].duration
+            if future_commits and now < future_commits[0].time:
+                now = future_commits[0].time
             result.append(run)
 
         return result
@@ -123,7 +125,7 @@ def commits_in_next_run(commits, now):
     commits_next_run, new_commits = [], []
     for commit in commits:
         (commits_next_run if commit.time < now else new_commits).append(commit)
-    return now, commits_next_run, new_commits
+    return commits_next_run, new_commits
 
 
 def generate_commits(count, now, min_interval, max_interval):
