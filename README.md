@@ -4,3 +4,8 @@ Pipeline Simulation
 This repo lets you play with different pipeline designs and lets you come up with scenarios 
 for how the pipeline could be used. Work in progress.
 
+
+Todo
+----
+- realistic test failure fixes
+- no commits during the night
