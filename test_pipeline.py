@@ -133,5 +133,5 @@ def test_future_commits_dont_trigger_run():
     commits = [commit1, commit2, commit3]
     stages = [Stage("Build", duration=timedelta(minutes=1), failure_rate=0)]
     pipeline = Pipeline(stages, trigger="commits")
-    runs = pipeline.simulation(now, commits, timedelta(minutes=3))
-    assert len(runs) == 1
+    runs = pipeline.simulation(now, commits, timedelta(minutes=30))
+    assert len(runs) == 2

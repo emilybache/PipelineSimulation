@@ -58,6 +58,8 @@ class Commit:
     name: str
     time: datetime
 
+    def __str__(self):
+        return self.name
 
 @dataclass
 class PipelineRun:
@@ -113,7 +115,7 @@ def as_rows(pipeline, runs):
                   "changes_included"] + stages + ["end_time"]
     rows.append(fieldnames)
     for run in runs:
-        row = [run.start_time, run.changes_included]
+        row = [run.start_time, [str(change) for change in run.changes_included]]
         for stage in run.stage_results:
             row.append(str(stage))
         row.append(run.end_time)
@@ -124,7 +126,7 @@ def as_rows(pipeline, runs):
 def commits_in_next_run(commits, now):
     commits_next_run, new_commits = [], []
     for commit in commits:
-        (commits_next_run if commit.time < now else new_commits).append(commit)
+        (commits_next_run if commit.time <= now else new_commits).append(commit)
     return commits_next_run, new_commits
 
 
