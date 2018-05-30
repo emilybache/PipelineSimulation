@@ -10,6 +10,7 @@ class StageStatus(Enum):
     fail = "fail"
     ok = "ok"
     skip = "skip (previous failure)"
+    busy = "skip (resource busy)"
 
     def __str__(self):
         return self.value
@@ -21,15 +22,31 @@ class Stage:
     name: str
     duration: timedelta
     failure_rate: int
+    stage_runs: list = field(default_factory=list)
     allow_concurrent_builds: bool = True
 
-    def result(self):
-        states = [StageStatus.fail, StageStatus.ok]
-        probability_distribution = [self.failure_rate, 1-self.failure_rate]
-        return choice(states, 1, p=probability_distribution)[0]
+    def add_result(self, now, previous_stage=None):
+        result = None
+
+        if not result and previous_stage and previous_stage.status != StageStatus.ok:
+            result = StageRun(StageStatus.skip, now, now)
+
+        if not result and self.stage_runs and not self.allow_concurrent_builds:
+            previous_run = self.stage_runs[-1]
+            if now < previous_run.end_time:
+                result = StageRun(StageStatus.busy, now, now)
+
+        if not result:
+            states = [StageStatus.fail, StageStatus.ok]
+            probability_distribution = [self.failure_rate, 1-self.failure_rate]
+            status = choice(states, 1, p=probability_distribution)[0]
+            result = StageRun(status, now, now+self.duration)
+
+        self.stage_runs.append(result)
+        return result
 
 
-@dataclass
+@dataclass(eq=True)
 class StageRun:
     status: StageStatus
     start_time: datetime
@@ -38,44 +55,40 @@ class StageRun:
 
 @dataclass
 class Commit:
-
     name: str
     time: datetime
 
 
-
 @dataclass
 class PipelineRun:
-
     start_time: datetime
-    changes_included: field(default_factory=list)
-    stage_results: field(default_factory=list)
     end_time: datetime
+    changes_included: list = field(default_factory=list)
+    stage_results: list = field(default_factory=list)
 
 
 @dataclass(eq=True)
 class Pipeline:
-
-    stages: field(default_factory=list)
-    trigger: str
+    stages: list = field(default_factory=list)
+    trigger: str = "commits"
 
     def simulation(self, start_time, commits, duration):
         result = []
         now = start_time
         future_commits = commits
-        previous_run = None
         while future_commits and now < start_time + duration:
             commits_this_run, future_commits = commits_in_next_run(future_commits, now)
             stage_results = simulate_stage_results(self.stages, now)
             end_time = stage_results[-1].end_time
 
             run = PipelineRun(start_time=now,
+                              end_time=end_time,
                               changes_included=commits_this_run,
                               stage_results=[result.status for result in stage_results],
-                              end_time=end_time)
+                              )
             now = now + self.stages[0].duration
             result.append(run)
-            previous_run = run
+
         return result
 
 
@@ -83,14 +96,12 @@ def simulate_stage_results(stages, now):
     results = []
     previous_result = None
     for stage in stages:
-        if previous_result and previous_result.status == StageStatus.fail:
-            results.append(StageRun(StageStatus.skip, start_time=now, end_time=now))
-        else:
-            results.append(StageRun(stage.result(), start_time=now, end_time=now+stage.duration))
-        previous_result = results[-1]
+        result = stage.add_result(now, previous_result)
+        results.append(result)
+        previous_result = result
         now = previous_result.end_time
-
     return results
+
 
 def as_rows(pipeline, runs):
     rows = []
