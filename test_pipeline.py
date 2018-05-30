@@ -81,9 +81,10 @@ def test_as_rows(passing_stage, failing_stage, second_passing_stage):
 
 
 def test_triggers():
-    assert ([commit1, commit2], [commit3]) == commits_in_next_run([commit1, commit2, commit3], now)
-    assert ([commit1, commit2], []) == commits_in_next_run([commit1, commit2], now)
-    assert ([commit3], []) == commits_in_next_run([commit3], now + timedelta(minutes=10))
+    assert (now, [commit1, commit2], [commit3]) == commits_in_next_run([commit1, commit2, commit3], now)
+    assert (now, [commit1, commit2], []) == commits_in_next_run([commit1, commit2], now)
+    new_now = now +timedelta(minutes=10)
+    assert (new_now, [commit3], []) == commits_in_next_run([commit3], new_now)
 
 
 def test_several_runs(passing_stage):
@@ -121,3 +122,16 @@ def test_non_concurrent_stages(passing_stage, manual_stage):
     assert runs[1].stage_results == [StageStatus.ok, StageStatus.busy]
     assert runs[1].end_time == now + passing_stage.duration + passing_stage.duration
 
+
+def test_generate_commits():
+    commits = generate_commits(100, now, min_interval=5,max_interval=30)
+    assert len(commits) == 100
+    assert commits[0].name == "#001"
+    assert commits[-1].name == "#100"
+
+def test_future_commits_dont_trigger_run():
+    commits = [commit1, commit2, commit3]
+    stages = [Stage("Build", duration=timedelta(minutes=1), failure_rate=0)]
+    pipeline = Pipeline(stages, trigger="commits")
+    runs = pipeline.simulation(now, commits, timedelta(minutes=3))
+    assert len(runs) == 1

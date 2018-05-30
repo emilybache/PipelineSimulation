@@ -1,7 +1,7 @@
 
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
-from numpy.random import choice
+from numpy.random import choice, randint
 from enum import Enum
 import csv
 
@@ -76,8 +76,9 @@ class Pipeline:
         result = []
         now = start_time
         future_commits = commits
-        while future_commits and now < start_time + duration:
-            commits_this_run, future_commits = commits_in_next_run(future_commits, now)
+        while future_commits \
+                and (now < start_time + duration):
+            now, commits_this_run, future_commits = commits_in_next_run(future_commits, now)
             stage_results = simulate_stage_results(self.stages, now)
             end_time = stage_results[-1].end_time
 
@@ -122,4 +123,13 @@ def commits_in_next_run(commits, now):
     commits_next_run, new_commits = [], []
     for commit in commits:
         (commits_next_run if commit.time < now else new_commits).append(commit)
-    return commits_next_run, new_commits
+    return now, commits_next_run, new_commits
+
+
+def generate_commits(count, now, min_interval, max_interval):
+    commits = []
+    for i in range(1,count+1):
+        commit = Commit("#{num:03d}".format(num=i), now)
+        now = now + timedelta(minutes=randint(min_interval, max_interval))
+        commits.append(commit)
+    return commits
