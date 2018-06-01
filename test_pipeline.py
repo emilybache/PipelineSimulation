@@ -58,8 +58,8 @@ def test_stage_status_strings():
 
 
 def test_stage_result(passing_stage, failing_stage):
-    assert passing_stage.add_result(now) == StageRun(StageStatus.ok, now, now+passing_stage.duration)
-    assert failing_stage.add_result(now) == StageRun(StageStatus.fail, now, now+failing_stage.duration)
+    assert passing_stage.add_result(now, now) == StageRun(StageStatus.ok, now, now+passing_stage.duration)
+    assert failing_stage.add_result(now, now) == StageRun(StageStatus.fail, now, now+failing_stage.duration)
 
 
 def test_three_stages(passing_stage, failing_stage, second_passing_stage):
@@ -123,11 +123,40 @@ def test_non_concurrent_stages(passing_stage, manual_stage):
     assert runs[1].end_time == now + passing_stage.duration + passing_stage.duration
 
 
+def test_manual_test_in_office_hours(passing_stage, manual_stage):
+    commits = [commit1, commit2]
+    stages = [passing_stage, manual_stage]
+    # start late in the day so manual testing is skipped
+    start_time = datetime(year=2018,month=4,day=3,hour=17, minute=59)
+    pipeline = Pipeline(stages, trigger="commits")
+    runs = pipeline.simulation(start_time, commits, timedelta(minutes=60))
+    assert len(runs) == 1
+    assert runs[0].start_time == start_time
+    assert runs[0].stage_results == [StageStatus.ok, StageStatus.unavailable]
+    assert runs[0].end_time == start_time + passing_stage.duration
+
+
 def test_generate_commits():
-    commits = generate_commits(100, now, min_interval=5,max_interval=30)
+    start_time = datetime(year=2018,month=4,day=3,hour=9)
+    commits = generate_commits(100, start_time, min_interval=5,max_interval=30)
     assert len(commits) == 100
     assert commits[0].name == "#001"
+    assert commits[0].time == start_time
     assert commits[-1].name == "#100"
+
+
+def test_generate_commits_during_working_hours():
+    start_time = datetime(year=2018,month=4,day=3,hour=17, minute=59)
+    commits = generate_commits(2, start_time, min_interval=5,max_interval=30)
+    assert start_time < commits[1].time
+    assert commits[1].time > datetime(year=2018,month=4,day=4,hour=8)
+
+
+def test_next_day():
+    start_time = datetime(year=2018,month=4,day=3,hour=18)
+    next_time = skip_nights(start_time, 8, 18)
+    assert next_time == datetime(year=2018, month=4, day=4, hour=8)
+
 
 def test_future_commits_dont_trigger_run():
     commits = [commit1, commit2, commit3]
@@ -135,3 +164,15 @@ def test_future_commits_dont_trigger_run():
     pipeline = Pipeline(stages, trigger="commits")
     runs = pipeline.simulation(now, commits, timedelta(minutes=30))
     assert len(runs) == 2
+
+
+def test_realistic_failure_recovery(passing_stage, failing_stage):
+    end_of_first_stage_time = now+passing_stage.duration
+    assert passing_stage.add_result(now, now) == StageRun(StageStatus.ok, now, end_of_first_stage_time)
+    assert failing_stage.add_result(end_of_first_stage_time, now) == StageRun(StageStatus.fail, end_of_first_stage_time, end_of_first_stage_time+failing_stage.duration)
+    start_of_next_pipeline = now + passing_stage.duration
+    end_of_next_pipeline_first_stage = start_of_next_pipeline + passing_stage.duration
+    assert passing_stage.add_result(start_of_next_pipeline, start_of_next_pipeline) == StageRun(StageStatus.ok, start_of_next_pipeline, end_of_next_pipeline_first_stage)
+    assert failing_stage.add_result(end_of_next_pipeline_first_stage, start_of_next_pipeline) == StageRun(StageStatus.repeat_fail, end_of_next_pipeline_first_stage, end_of_next_pipeline_first_stage+failing_stage.duration)
+
+

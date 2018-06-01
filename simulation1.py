@@ -11,9 +11,9 @@ stages = [
     Stage("Manual Test", duration=timedelta(minutes=120), failure_rate = 0.1, allow_concurrent_builds=False),
 ]
 
-now = datetime.now()
+now = datetime(year=2018,month=5,day=7,hour=8)
 
-commits = generate_commits(100, now, min_interval=3, max_interval=120)
+commits = generate_commits(100, now, min_interval=1, max_interval=100)
 
 pipeline = Pipeline(stages)
 
