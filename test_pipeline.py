@@ -4,7 +4,8 @@ from io import StringIO
 import pytest
 
 from pipeline import *
-
+from stages import Stage, StageStatus, StageRun
+from commits import Commit
 
 @pytest.fixture
 def passing_stage():
@@ -20,9 +21,15 @@ def failing_stage():
 
 @pytest.fixture
 def manual_stage():
-    return Stage("Manual Test", timedelta(minutes=60), failure_rate=0, allow_concurrent_builds=False)
+    return Stage("Manual Test", timedelta(minutes=60), failure_rate=0, manual_stage=True)
 
-now = datetime.now()
+@pytest.fixture
+def scheduled_stage():
+    return Stage("Manual Test", timedelta(minutes=60), failure_rate=0, manual_stage=True,
+                 fixed_interval=timedelta(days=1))
+
+
+now = datetime(year=2018,month=4,day=3,hour=8)
 commit1 = Commit("#001", time=now - timedelta(minutes=10))
 commit2 = Commit("#002", time=now - timedelta(minutes=5))
 commit3 = Commit("#003", time=now + timedelta(minutes=5))
@@ -52,14 +59,6 @@ def test_failing_stage(failing_stage):
             ] == runs
 
 
-def test_stage_status_strings():
-    assert str(StageStatus.ok) == "ok"
-    assert ["ok", "fail", "foobar"] == list(map(str, [StageStatus.ok, StageStatus.fail, "foobar"]))
-
-
-def test_stage_result(passing_stage, failing_stage):
-    assert passing_stage.add_result(now, now) == StageRun(StageStatus.ok, now, now+passing_stage.duration)
-    assert failing_stage.add_result(now, now) == StageRun(StageStatus.fail, now, now+failing_stage.duration)
 
 
 def test_three_stages(passing_stage, failing_stage, second_passing_stage):
@@ -72,12 +71,6 @@ def test_three_stages(passing_stage, failing_stage, second_passing_stage):
                         )
             ] == runs
 
-
-def test_as_rows(passing_stage, failing_stage, second_passing_stage):
-    pipeline = Pipeline([passing_stage, failing_stage, second_passing_stage], trigger="commits")
-    runs = pipeline.simulation(now, [commit1], timedelta(minutes=60))
-    rows = as_rows(pipeline, runs)
-    assert ",".join(map(str,rows[0])) == "start_time,changes_included,Build,Build,AcceptanceTest,end_time"
 
 
 def test_triggers():
@@ -136,28 +129,6 @@ def test_manual_test_in_office_hours(passing_stage, manual_stage):
     assert runs[0].end_time == start_time + passing_stage.duration
 
 
-def test_generate_commits():
-    start_time = datetime(year=2018,month=4,day=3,hour=9)
-    commits = generate_commits(100, start_time, min_interval=5,max_interval=30)
-    assert len(commits) == 100
-    assert commits[0].name == "#001"
-    assert commits[0].time == start_time
-    assert commits[-1].name == "#100"
-
-
-def test_generate_commits_during_working_hours():
-    start_time = datetime(year=2018,month=4,day=3,hour=17, minute=59)
-    commits = generate_commits(2, start_time, min_interval=5,max_interval=30)
-    assert start_time < commits[1].time
-    assert commits[1].time > datetime(year=2018,month=4,day=4,hour=8)
-
-
-def test_next_day():
-    start_time = datetime(year=2018,month=4,day=3,hour=18)
-    next_time = skip_nights(start_time, 8, 18)
-    assert next_time == datetime(year=2018, month=4, day=4, hour=8)
-
-
 def test_future_commits_dont_trigger_run():
     commits = [commit1, commit2, commit3]
     stages = [Stage("Build", duration=timedelta(minutes=1), failure_rate=0)]
@@ -174,5 +145,6 @@ def test_realistic_failure_recovery(passing_stage, failing_stage):
     end_of_next_pipeline_first_stage = start_of_next_pipeline + passing_stage.duration
     assert passing_stage.add_result(start_of_next_pipeline, start_of_next_pipeline) == StageRun(StageStatus.ok, start_of_next_pipeline, end_of_next_pipeline_first_stage)
     assert failing_stage.add_result(end_of_next_pipeline_first_stage, start_of_next_pipeline) == StageRun(StageStatus.repeat_fail, end_of_next_pipeline_first_stage, end_of_next_pipeline_first_stage+failing_stage.duration)
+
 
 

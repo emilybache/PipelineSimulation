@@ -1,10 +1,9 @@
 
-from datetime import datetime, timedelta
-import csv
-import sys
-import os
+from datetime import timedelta
 
-from pipeline import *
+from pipeline import Pipeline
+from commits import generate_commits
+from export import to_csv
 
 
 def run_simulation(name, start_date, stages, max_commit_interval):
@@ -16,7 +15,4 @@ def run_simulation(name, start_date, stages, max_commit_interval):
                                commits=commits,
                                duration=timedelta(days=5))
 
-    with open(name + ".csv", "w") as f:
-        writer = csv.writer(f)
-        for row in as_rows(pipeline, runs):
-            writer.writerow(row)
+    to_csv(name, pipeline, runs)
