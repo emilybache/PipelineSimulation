@@ -14,11 +14,11 @@ class Commit:
         return self.name
 
 
-def generate_commits(count, now, min_interval, max_interval, working_hour_start=8, working_hour_end=18):
+def generate_commits(count, now, max_interval, offset=1, working_hour_start=8, working_hour_end=18):
     commits = []
-    for i in range(1,count+1):
-        commit = Commit("#{num:03d}".format(num=i), now)
-        now = now + timedelta(minutes=randint(min_interval, max_interval))
+    for i in range(offset, offset+count):
+        commit = Commit("#{num:04d}".format(num=i), now)
+        now = now + timedelta(minutes=randint(2, max_interval))
         now = skip_nights_and_weekends(now, working_hour_start, working_hour_end)
         commits.append(commit)
     return commits

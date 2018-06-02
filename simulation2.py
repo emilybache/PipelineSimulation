@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 
+from commits import generate_commits
 from deploy import DeployPolicy, Deployer
 from simulation import run_simulation
 
@@ -13,6 +14,8 @@ stages = [
 
 start_time = datetime(year=2017,month=6,day=19,hour=8)
 
+commits = generate_commits(100, start_time, offset=1000, max_interval=200)
+
 deployer=Deployer(deploy_delay=timedelta(minutes=20), deploy_policy=DeployPolicy.OnceADay, deploy_hour=8)
 
-run_simulation("simulation2", start_time, stages, max_commit_interval=200, deployer=deployer)
+run_simulation("simulation2", start_time, stages, commits=commits, deployer=deployer)
