@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from commits import generate_commits, skip_nights
+from commits import generate_commits, skip_nights_and_weekends
 
 
 def test_generate_commits():
@@ -21,6 +21,11 @@ def test_generate_commits_during_working_hours():
 
 def test_skip_nights():
     start_time = datetime(year=2018,month=4,day=3,hour=18)
-    next_time = skip_nights(start_time, 8, 18)
+    next_time = skip_nights_and_weekends(start_time, 8, 18)
     assert next_time == datetime(year=2018, month=4, day=4, hour=8)
 
+
+def test_skip_weekends():
+    friday = datetime(year=2018,month=6,day=1,hour=18)
+    next_time = skip_nights_and_weekends(friday, 8, 18)
+    assert next_time == datetime(year=2018,month=6,day=4,hour=8)

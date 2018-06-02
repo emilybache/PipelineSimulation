@@ -1,11 +1,11 @@
-from datetime import datetime, timedelta
-from io import StringIO
-
 import pytest
 
+from datetime import timedelta, datetime
+
+from commits import Commit
 from pipeline import *
 from stages import Stage, StageStatus, StageRun
-from commits import Commit
+
 
 @pytest.fixture
 def passing_stage():
@@ -44,6 +44,7 @@ def test_one_stage(passing_stage):
                         end_time=now + timedelta(minutes=10),
                         changes_included=commits,
                         stage_results=[StageStatus.ok],
+                        deploy_time="",
                         )
             ] == runs
 
@@ -55,10 +56,9 @@ def test_failing_stage(failing_stage):
                         end_time=now + timedelta(minutes=10),
                         changes_included=[commit1],
                         stage_results=[StageStatus.fail],
+                        deploy_time="",
                         )
             ] == runs
-
-
 
 
 def test_three_stages(passing_stage, failing_stage, second_passing_stage):
@@ -68,9 +68,9 @@ def test_three_stages(passing_stage, failing_stage, second_passing_stage):
                         end_time=now + passing_stage.duration + failing_stage.duration,
                         changes_included=[commit1],
                         stage_results=[StageStatus.ok, StageStatus.fail, StageStatus.skip],
+                        deploy_time="",
                         )
             ] == runs
-
 
 
 def test_triggers():
@@ -147,4 +147,17 @@ def test_realistic_failure_recovery(passing_stage, failing_stage):
     assert failing_stage.add_result(end_of_next_pipeline_first_stage, start_of_next_pipeline) == StageRun(StageStatus.repeat_fail, end_of_next_pipeline_first_stage, end_of_next_pipeline_first_stage+failing_stage.duration)
 
 
+def test_one_stage_with_deployment(passing_stage):
+    stages = [passing_stage]
+    commits = [commit1]
+    deploy_delay = timedelta(minutes=1)
+    pipeline = Pipeline(stages, deployer=Deployer(deploy_delay=deploy_delay, deploy_policy=DeployPolicy.EveryPassing))
+    runs = pipeline.simulation(now, commits, timedelta(minutes=60))
+    assert [PipelineRun(start_time=now,
+                        end_time=now + timedelta(minutes=10),
+                        changes_included=commits,
+                        stage_results=[StageStatus.ok],
+                        deploy_time=str(now + passing_stage.duration + deploy_delay),
+                        )
+            ] == runs
 
