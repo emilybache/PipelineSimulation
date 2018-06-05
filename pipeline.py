@@ -12,7 +12,7 @@ class PipelineRun:
     end_time: datetime
     changes_included: list = field(default_factory=list)
     stage_results: list = field(default_factory=list)
-    deploy_time: datetime = None
+    deploy_time: str = None
 
 
 @dataclass(eq=True)
