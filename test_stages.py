@@ -6,6 +6,7 @@ from test_pipeline import passing_stage, failing_stage, now
 def test_stage_status_strings():
     assert str(StageStatus.ok) == "ok"
     assert ["ok", "fail", "foobar"] == list(map(str, [StageStatus.ok, StageStatus.fail, "foobar"]))
+    assert str(StageRun(status=StageStatus.ok, start_time=now, end_time=now)) == "ok"
 
 
 def test_stage_result(passing_stage, failing_stage):

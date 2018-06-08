@@ -17,12 +17,13 @@ class StageStatus(Enum):
         return self.value
 
 
+
 @dataclass
 class Stage:
 
     name: str
     duration: timedelta
-    failure_rate: int
+    failure_rate: float
     stage_runs: list = field(default_factory=list)
     manual_stage: bool = False
     latest_hour: int = 18 # testers go home at this time
@@ -59,5 +60,9 @@ class Stage:
 @dataclass(eq=True)
 class StageRun:
     status: StageStatus
-    start_time: datetime
-    end_time: datetime
+    start_time: datetime = None
+    end_time: datetime = None
+
+    def __str__(self):
+        return str(self.status)
+

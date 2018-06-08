@@ -12,7 +12,17 @@ class PipelineRun:
     end_time: datetime
     changes_included: list = field(default_factory=list)
     stage_results: list = field(default_factory=list)
-    deploy_time: str = None
+    deploy_time: str = ""
+
+    def __str__(self):
+        s = "Pipeline Run("
+        s += str(self.start_time) + ", "
+        s += str(self.end_time) + ", "
+        s += str(self.changes_included) + ", "
+        s += "[" + ''.join([str(run) for run in self.stage_results]) + "], "
+        s += str(self.deploy_time)
+        s += ")"
+        return s
 
 
 @dataclass(eq=True)
@@ -34,14 +44,18 @@ class Pipeline:
             run = PipelineRun(start_time=now,
                               end_time=end_time,
                               changes_included=commits_this_run,
-                              stage_results=[result.status for result in stage_results],
-                              deploy_time=self.simulate_deploy(stage_results[-1]),
+                              stage_results=stage_results,
                               )
+
             now = now + self.stages[0].duration
             if future_commits and now < future_commits[0].time:
                 now = future_commits[0].time
 
             self.runs.append(run)
+
+        for run in reversed(self.runs):
+            run.deploy_time = self.simulate_deploy(run.stage_results[-1])
+
 
         return self.runs
 
