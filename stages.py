@@ -27,7 +27,7 @@ class Stage:
     stage_runs: list = field(default_factory=list)
     manual_stage: bool = False
     latest_hour: int = 18 # testers go home at this time
-    performance_stage: bool = False
+    single_threaded: bool = False
 
     def add_result(self, now, run_start_time, previous_stage=None):
         result = None
@@ -38,7 +38,7 @@ class Stage:
         if not result and self.manual_stage and (now + self.duration).hour > self.latest_hour:
             result = StageRun(StageStatus.unavailable, now, now)
 
-        if not result and self.stage_runs and (self.manual_stage or self.performance_stage):
+        if not result and self.stage_runs and (self.manual_stage or self.single_threaded):
             previous_run = self.stage_runs[-1]
             if now < previous_run.end_time:
                 result = StageRun(StageStatus.busy, now, now)

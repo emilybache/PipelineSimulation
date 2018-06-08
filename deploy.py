@@ -17,8 +17,9 @@ class DeployPolicy(Enum):
 
 @dataclass
 class Deployer:
+    name: str = "Deploy"
     deploy_policy: DeployPolicy = DeployPolicy.EveryPassing
-    deploy_delay: timedelta = timedelta(minutes=2)
+    duration: timedelta = timedelta(minutes=2)
     deploy_hour: int = 0
     latest_deploy_hour: int = 16
     deploy_day: int = 1
@@ -38,18 +39,18 @@ class Deployer:
         passing_runs = filter(lambda r: r.stage_results[-1].status == StageStatus.ok, runs)
         if self.deploy_policy == DeployPolicy.EveryPassing:
             for run in passing_runs:
-                run.deploy_time = self._end_time(run) + self.deploy_delay
+                run.deploy_time = self._end_time(run) + self.duration
 
         if self.deploy_policy == DeployPolicy.OnceADay:
             # deploy only one run in each group, grouped by day
             for deploy_time, runs in groupby(passing_runs, self._next_deploy_day):
                 the_one_to_deploy = list(runs)[-1]
-                the_one_to_deploy.deploy_time = deploy_time + self.deploy_delay
+                the_one_to_deploy.deploy_time = deploy_time + self.duration
 
         if self.deploy_policy == DeployPolicy.OnceAWeek:
             # deploy only one run in each group, grouped by week
             for deploy_time, runs in groupby(passing_runs, self._next_deploy_weekday):
                 the_one_to_deploy = list(runs)[-1]
-                the_one_to_deploy.deploy_time = deploy_time + self.deploy_delay
+                the_one_to_deploy.deploy_time = deploy_time + self.duration
 
 

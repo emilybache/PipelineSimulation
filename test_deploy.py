@@ -18,7 +18,7 @@ class StubPipelineRun:
 
 def test_choose_runs_to_deploy():
     deploy_delay = timedelta(minutes=1)
-    deployer = Deployer(deploy_delay=deploy_delay, deploy_policy=DeployPolicy.EveryPassing)
+    deployer = Deployer(duration=deploy_delay, deploy_policy=DeployPolicy.EveryPassing)
     runs = [StubPipelineRun(now, now, [StageRun(StageStatus.ok, end_time=now)])]
     deployer.add_deployments(runs)
 
@@ -28,7 +28,7 @@ def test_choose_runs_to_deploy():
 def test_choose_runs_to_deploy_once_a_week():
     deploy_delay = timedelta(hours=1)
     ten = timedelta(minutes=10)
-    deployer = Deployer(deploy_delay=deploy_delay, deploy_policy=DeployPolicy.OnceAWeek, deploy_hour=9, deploy_day=6)
+    deployer = Deployer(duration=deploy_delay, deploy_policy=DeployPolicy.OnceAWeek, deploy_hour=9, deploy_day=6)
     runs = [StubPipelineRun(now, now, [StageRun(StageStatus.ok, end_time=now)]),
             StubPipelineRun(now + ten, now + ten, [StageRun(StageStatus.ok, end_time=(now + ten))])]
     deployer.add_deployments(runs)
@@ -41,7 +41,7 @@ def test_choose_runs_to_deploy_once_a_week():
 def test_choose_runs_to_deploy_daily():
     deploy_delay = timedelta(hours=1)
     ten = timedelta(minutes=10)
-    deployer = Deployer(deploy_delay=deploy_delay, deploy_policy=DeployPolicy.OnceADay, deploy_hour=14)
+    deployer = Deployer(duration=deploy_delay, deploy_policy=DeployPolicy.OnceADay, deploy_hour=14)
     runs = [StubPipelineRun(now, now, [StageRun(StageStatus.ok, end_time=now)]),
             StubPipelineRun(now + ten, now + ten, [StageRun(StageStatus.ok, end_time=(now + ten))])]
     deployer.add_deployments(runs)

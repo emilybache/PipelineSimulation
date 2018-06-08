@@ -154,7 +154,7 @@ def test_one_stage_with_deployment(passing_stage):
     stages = [passing_stage]
     commits = [commit1]
     deploy_delay = timedelta(minutes=1)
-    pipeline = Pipeline(stages, deployer=Deployer(deploy_delay=deploy_delay, deploy_policy=DeployPolicy.EveryPassing))
+    pipeline = Pipeline(stages, deployer=Deployer(duration=deploy_delay, deploy_policy=DeployPolicy.EveryPassing))
     runs = pipeline.simulation(now, commits, timedelta(minutes=60))
     assert str(PipelineRun(start_time=now,
                         end_time=now + timedelta(minutes=10),

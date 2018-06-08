@@ -9,7 +9,7 @@ from stages import Stage
 stages = [
     Stage("Build & Unit Test", duration=timedelta(minutes=15), failure_rate = 0.1),
     Stage("GUI Test", duration=timedelta(minutes=50), failure_rate = 0.3),
-    Stage("Manual Test", duration=timedelta(minutes=300), failure_rate = 0.3, manual_stage=True),
+    Stage("Manual Test", duration=timedelta(minutes=120), failure_rate = 0.3, manual_stage=True),
 ]
 
 start_time = datetime(year=2017,month=1,day=2,hour=8)
