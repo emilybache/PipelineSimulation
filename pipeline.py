@@ -38,7 +38,7 @@ class Pipeline:
         while future_commits \
                 and (now < start_time + duration):
             commits_this_run, future_commits = commits_in_next_run(future_commits, now)
-            stage_results = simulate_stage_results(self.stages, now)
+            stage_results = self.simulate_stage_results(now)
             end_time = stage_results[-1].end_time
 
             run = PipelineRun(start_time=now,
@@ -53,29 +53,20 @@ class Pipeline:
 
             self.runs.append(run)
 
-        for run in reversed(self.runs):
-            run.deploy_time = self.simulate_deploy(run.stage_results[-1])
-
+        self.deployer.add_deployments(self.runs)
 
         return self.runs
 
-    def simulate_deploy(self, last_stage_result):
-        if last_stage_result.status == StageStatus.ok:
-            return str(self.deployer.deploy(last_stage_result.end_time))
-        else:
-            return ""
-
-
-def simulate_stage_results(stages, now):
-    results = []
-    previous_result = None
-    run_start_time = now
-    for stage in stages:
-        result = stage.add_result(now, run_start_time, previous_result)
-        results.append(result)
-        previous_result = result
-        now = previous_result.end_time
-    return results
+    def simulate_stage_results(self, now):
+        results = []
+        previous_result = None
+        run_start_time = now
+        for stage in self.stages:
+            result = stage.add_result(now, run_start_time, previous_result)
+            results.append(result)
+            previous_result = result
+            now = previous_result.end_time
+        return results
 
 
 def commits_in_next_run(commits, now):

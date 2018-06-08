@@ -2,7 +2,9 @@ from datetime import timedelta
 from enum import Enum
 
 from dataclasses import dataclass
+from itertools import groupby
 
+from stages import StageStatus
 from util import next_weekday, next_day_of_week
 
 
@@ -21,16 +23,33 @@ class Deployer:
     latest_deploy_hour: int = 16
     deploy_day: int = 1
 
-    def deploy(self, now):
-        if self.deploy_policy == DeployPolicy.EveryPassing and now.hour < self.latest_deploy_hour:
-            return now + self.deploy_delay
-        if self.deploy_policy == DeployPolicy.OnceADay:
-            next_day = next_weekday(now)
-            return next_day.replace(hour=self.deploy_hour) + self.deploy_delay
-        if self.deploy_policy == DeployPolicy.OnceAWeek:
-            next_deploy_day = next_day_of_week(now, self.deploy_day)
-            return next_deploy_day + self.deploy_delay
+    def _end_time(self, run):
+        return run.stage_results[-1].end_time
 
-        return ""
+    def _next_deploy_day(self, run):
+        deploy_day = next_weekday(self._end_time(run))
+        return deploy_day.replace(hour=self.deploy_hour, minute=0)
+
+    def _next_deploy_weekday(self, run):
+        deploy_day = next_day_of_week(self._end_time(run), self.deploy_day)
+        return deploy_day.replace(hour=self.deploy_hour, minute=0)
+
+    def add_deployments(self, runs):
+        passing_runs = filter(lambda r: r.stage_results[-1].status == StageStatus.ok, runs)
+        if self.deploy_policy == DeployPolicy.EveryPassing:
+            for run in passing_runs:
+                run.deploy_time = self._end_time(run) + self.deploy_delay
+
+        if self.deploy_policy == DeployPolicy.OnceADay:
+            # deploy only one run in each group, grouped by day
+            for deploy_time, runs in groupby(passing_runs, self._next_deploy_day):
+                the_one_to_deploy = list(runs)[-1]
+                the_one_to_deploy.deploy_time = deploy_time + self.deploy_delay
+
+        if self.deploy_policy == DeployPolicy.OnceAWeek:
+            # deploy only one run in each group, grouped by week
+            for deploy_time, runs in groupby(passing_runs, self._next_deploy_weekday):
+                the_one_to_deploy = list(runs)[-1]
+                the_one_to_deploy.deploy_time = deploy_time + self.deploy_delay
 
 
