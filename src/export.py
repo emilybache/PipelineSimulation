@@ -1,9 +1,9 @@
 import csv
 
 
-def as_rows(pipeline, runs):
+def as_rows(stages, runs):
     rows = []
-    stages = [stage.name for stage in pipeline.stages]
+    stages = [stage.name for stage in stages]
     fieldnames = ["Start Time",
                   "Changes Included"] + stages + \
                  ["End Time", "Deploy Time"]
@@ -18,8 +18,8 @@ def as_rows(pipeline, runs):
     return rows
 
 
-def to_csv(filename, pipeline, runs):
+def to_csv(filename, stages, runs):
     with open(filename + ".csv", "w") as f:
         writer = csv.writer(f)
-        for row in as_rows(pipeline, runs):
+        for row in as_rows(stages, runs):
             writer.writerow(row)

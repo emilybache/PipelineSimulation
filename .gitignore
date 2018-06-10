@@ -3,3 +3,5 @@
 .cache
 .idea
 *.csv
+.pytest_cache
+src/.pytest_cache
