@@ -41,7 +41,7 @@ def test_str():
                        end_time=now + timedelta(minutes=10),
                        changes_included=[commit1],
                        stage_results=[StageRun(StageStatus.ok)],
-                       deploy_time="",
+                       deploy_time=None,
                        ))
 
 def test_one_stage(passing_stage):
@@ -54,7 +54,7 @@ def test_one_stage(passing_stage):
                         end_time=now + timedelta(minutes=10),
                         changes_included=commits,
                         stage_results=[StageRun(StageStatus.ok)],
-                        deploy_time="",
+                        deploy_time=None,
                         )
                ) == str(runs[0])
 
@@ -66,7 +66,7 @@ def test_failing_stage(failing_stage):
                         end_time=now + timedelta(minutes=10),
                         changes_included=[commit1],
                         stage_results=[StageStatus.fail],
-                        deploy_time="",
+                        deploy_time=None,
                         )
                ) == str(runs[0])
 
@@ -78,7 +78,7 @@ def test_three_stages(passing_stage, failing_stage, second_passing_stage):
                         end_time=now + passing_stage.duration + failing_stage.duration,
                         changes_included=[commit1],
                         stage_results=[StageStatus.ok, StageStatus.fail, StageStatus.skip],
-                        deploy_time="",
+                        deploy_time=None,
                         )
                ) == str(runs[0])
 

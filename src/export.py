@@ -13,7 +13,10 @@ def as_rows(stages, runs):
         for stage in run.stage_results:
             row.append(str(stage))
         row.append(run.end_time)
-        row.append(run.deploy_time)
+        if run.deploy_time:
+            row.append(run.deploy_time)
+        else:
+            row.append("")
         rows.append(row)
     return rows
 

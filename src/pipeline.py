@@ -12,7 +12,7 @@ class PipelineRun:
     end_time: datetime
     changes_included: list = field(default_factory=list)
     stage_results: list = field(default_factory=list)
-    deploy_time: str = ""
+    deploy_time: datetime = None
 
     def __str__(self):
         s = "Pipeline Run("
@@ -20,9 +20,13 @@ class PipelineRun:
         s += str(self.end_time) + ", "
         s += str(self.changes_included) + ", "
         s += "[" + ''.join([str(run) for run in self.stage_results]) + "], "
-        s += str(self.deploy_time)
+        if self.deploy_time:
+            s += str(self.deploy_time)
         s += ")"
         return s
+
+    def successful(self):
+        return self.stage_results[-1].status == StageStatus.ok
 
 
 @dataclass(eq=True)
