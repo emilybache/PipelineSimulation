@@ -3,6 +3,7 @@ from itertools import tee, dropwhile
 
 from dataclasses import dataclass
 
+
 @dataclass
 class PipelineMetrics:
     pipeline_lead_time: timedelta = None
@@ -13,6 +14,41 @@ class PipelineMetrics:
     deployment_failure_rate: float = 0.0
     deployment_interval: timedelta = None
     deployment_recovery_time: timedelta = None
+
+    def pretty_print(self):
+        s = f"""\
+Pipeline Metrics
+Deployment Interval: {_pretty_time_delta(self.deployment_interval)}
+Deployment Lead Time: {_pretty_time_delta(self.deployment_lead_time)}
+Deployment Recovery Time: {_pretty_time_delta(self.deployment_recovery_time)}
+Deployment Failure Rate: {_pretty_percent(self.deployment_failure_rate)}%
+
+Release Candidate Interval: {_pretty_time_delta(self.pipeline_interval)}
+Release Candidate Lead Time: {_pretty_time_delta(self.pipeline_lead_time)}
+Release Candidate Recovery Time: {_pretty_time_delta(self.pipeline_recovery_time)}
+Release Candidate Failure Rate: {_pretty_percent(self.pipeline_failure_rate)}%
+"""
+        return s
+
+
+def _pretty_percent(number):
+    return "{0:g}".format(number*100)
+
+def _pretty_time_delta(timedelta):
+    if not timedelta:
+        return "N/A"
+    seconds = int(timedelta.seconds)
+    days, seconds = divmod(seconds, 86400)
+    hours, seconds = divmod(seconds, 3600)
+    minutes, seconds = divmod(seconds, 60)
+    if days > 0:
+        return '%d days %d hours' % (days, hours)
+    elif hours > 0:
+        return '%d hours %d minutes' % (hours, minutes)
+    elif minutes > 0:
+        return '%d minutes' % (minutes)
+    else:
+        return '%ds' % (seconds,)
 
 
 def _pairwise(iterable):

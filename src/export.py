@@ -26,3 +26,8 @@ def to_csv(filename, stages, runs):
         writer = csv.writer(f)
         for row in as_rows(stages, runs):
             writer.writerow(row)
+
+
+def print_metrics(simulation_name, pipeline_metrics):
+    with open(simulation_name + ".txt", "w") as f:
+        f.write(pipeline_metrics.pretty_print())

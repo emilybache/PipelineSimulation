@@ -6,7 +6,7 @@ from commits import Commit
 from pipeline import PipelineRun
 from stages import Stage, StageRun, StageStatus
 
-from metrics import pipeline_metrics
+from metrics import pipeline_metrics, PipelineMetrics
 
 
 def test_passing_metrics():
@@ -78,3 +78,26 @@ def test_deploy_metrics():
     assert metrics.deployment_failure_rate == 0
     assert metrics.deployment_interval == timedelta(minutes=20)
     assert metrics.deployment_recovery_time == None
+
+
+def test_str():
+    metrics = PipelineMetrics(deployment_lead_time=timedelta(minutes=11),
+                              deployment_failure_rate=0,
+                              deployment_interval=timedelta(minutes=20),
+                              deployment_recovery_time=None,
+                              pipeline_lead_time=timedelta(minutes=10),
+                              pipeline_interval=timedelta(minutes=20),
+                              pipeline_failure_rate=0.33,
+                              pipeline_recovery_time=timedelta(minutes=30))
+    assert  """\
+Pipeline Metrics
+Deployment Interval: 20 minutes
+Deployment Lead Time: 11 minutes
+Deployment Recovery Time: N/A
+Deployment Failure Rate: 0%
+
+Release Candidate Interval: 20 minutes
+Release Candidate Lead Time: 10 minutes
+Release Candidate Recovery Time: 30 minutes
+Release Candidate Failure Rate: 33%
+""" == metrics.pretty_print()
