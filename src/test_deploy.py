@@ -39,6 +39,7 @@ def test_choose_runs_to_deploy_once_a_week():
 
 
 def test_choose_runs_to_deploy_daily():
+    now = datetime(year=2018,month=6,day=1,hour=15)
     deploy_delay = timedelta(hours=1)
     ten = timedelta(minutes=10)
     deployer = Deployer(duration=deploy_delay, deploy_policy=DeployPolicy.OnceADay, deploy_hour=14)
@@ -49,5 +50,18 @@ def test_choose_runs_to_deploy_daily():
     assert runs[0].deploy_time == ""
     # deploy on Monday
     assert runs[1].deploy_time == datetime(year=2018, month=6, day=4, hour=14) + deploy_delay
+
+def test_choose_runs_to_deploy_same_day():
+    now = datetime(year=2018,month=6,day=1,hour=15)
+    deploy_delay = timedelta(hours=1)
+    ten = timedelta(minutes=10)
+    deployer = Deployer(duration=deploy_delay, deploy_policy=DeployPolicy.OnceADay, deploy_hour=17)
+    runs = [StubPipelineRun(now, now, [StageRun(StageStatus.ok, end_time=now)]),
+            StubPipelineRun(now + ten, now + ten, [StageRun(StageStatus.ok, end_time=(now + ten))])]
+    deployer.add_deployments(runs)
+
+    assert runs[0].deploy_time == ""
+    # deploy same day since deploy time is after run is ready
+    assert runs[1].deploy_time == datetime(year=2018, month=6, day=1, hour=17) + deploy_delay
 
 

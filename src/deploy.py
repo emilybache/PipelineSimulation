@@ -28,7 +28,11 @@ class Deployer:
         return run.stage_results[-1].end_time
 
     def _next_deploy_day(self, run):
-        deploy_day = next_weekday(self._end_time(run))
+        candidate_available_at = self._end_time(run)
+        if candidate_available_at.hour < self.deploy_hour:
+            deploy_day = candidate_available_at
+        else:
+            deploy_day = next_weekday(candidate_available_at)
         return deploy_day.replace(hour=self.deploy_hour, minute=0)
 
     def _next_deploy_weekday(self, run):

@@ -18,7 +18,7 @@ start_time = datetime(year=2017,month=12,day=11,hour=8)
 
 commits = generate_commits(100, start_time, offset=2000, max_interval=100)
 
-deployer=Deployer(duration=timedelta(minutes=4), deploy_policy=DeployPolicy.OnceADay, deploy_hour=7, deploy_day=6)
+deployer=Deployer(duration=timedelta(minutes=4), deploy_policy=DeployPolicy.OnceADay, deploy_hour=17, deploy_day=6)
 
 runs = run_simulation(start_time, stages, commits=commits, deployer=deployer)
 print_runs("simulation_farley", stages, runs)
