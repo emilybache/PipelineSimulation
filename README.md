@@ -4,6 +4,18 @@ Pipeline Simulation
 This repo lets you play with different pipeline designs and lets you come up with scenarios 
 for how the pipeline could be used. Work in progress.
 
+Installation
+------------
+
+The project uses python3 needs a few, dataclasses, numpy and pytest python packages.
+If you don't have them already in you python environment or like to work in isolation
+you can set up a virtualenv for it with the following commands:
+
+    python3 -m venv .venv
+    source .venv/bin/activate
+    pip3 install -r requirements.txt
+
+
 Usage
 -----
 
