@@ -2,6 +2,8 @@ from datetime import datetime, timedelta
 
 from commits import generate_commits
 from deploy import DeployPolicy, Deployer
+from export import print_metrics
+from metrics import pipeline_metrics
 from simulation import run_simulation, print_runs
 
 from stages import Stage
@@ -20,3 +22,6 @@ deployer=Deployer(duration=timedelta(minutes=20), deploy_policy=DeployPolicy.Onc
 
 runs = run_simulation(start_time, stages, commits=commits, deployer=deployer)
 print_runs("simulation2", stages, runs)
+
+metrics = pipeline_metrics(runs)
+print_metrics("simulation2", metrics)

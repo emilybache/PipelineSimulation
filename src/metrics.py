@@ -3,6 +3,12 @@ from itertools import tee, dropwhile
 
 from dataclasses import dataclass
 
+from util import OfficeHours
+
+
+def pipeline_metrics(runs):
+    return MetricsCalculator(runs).metrics()
+
 
 @dataclass
 class PipelineMetrics:
@@ -31,14 +37,48 @@ Release Candidate Failure Rate: {_pretty_percent(self.pipeline_failure_rate)}%
         return s
 
 
+class MetricsCalculator:
+
+    def __init__(self, runs):
+        self.runs = runs
+        self.office_hours = OfficeHours()
+        self.deploys = [run for run in self.runs if run.deploy_time is not None]
+        self.successful_runs = [run for run in runs if run.successful()]
+        self.unsuccessful_runs = [run for run in runs if not run.successful()]
+
+    def metrics(self):
+        deployment_lead_times = [run.deploy_time - run.start_time for run in self.deploys]
+        successful_deploy_times = [run.deploy_time for run in self.deploys]
+        deployment_interval = _interval(successful_deploy_times)
+        deployment_recovery_time = _recovery_time(successful_deploy_times, [])
+
+        lead_times = [run.end_time - run.start_time for run in self.successful_runs]
+        pipeline_failure_rate = (len(self.runs) - len(self.successful_runs)) / len(self.runs)
+        pipeline_success_times = [run.end_time for run in self.successful_runs]
+        pipeline_failure_times = [run.end_time for run in self.unsuccessful_runs]
+        pipeline_interval = _interval(pipeline_success_times, self.office_hours)
+        pipeline_recovery_time = _recovery_time(pipeline_success_times, pipeline_failure_times, self.office_hours)
+
+        return PipelineMetrics(pipeline_lead_time=_average_timedelta(lead_times),
+                               pipeline_failure_rate=pipeline_failure_rate,
+                               pipeline_interval=pipeline_interval,
+                               pipeline_recovery_time=pipeline_recovery_time,
+                               deployment_lead_time=_average_timedelta(deployment_lead_times),
+                               deployment_failure_rate=0.0,
+                               deployment_interval=deployment_interval,
+                               deployment_recovery_time=deployment_recovery_time
+                               )
+
+
 def _pretty_percent(number):
     return "{0:g}".format(number*100)
+
 
 def _pretty_time_delta(timedelta):
     if not timedelta:
         return "N/A"
+    days = timedelta.days
     seconds = int(timedelta.seconds)
-    days, seconds = divmod(seconds, 86400)
     hours, seconds = divmod(seconds, 3600)
     minutes, seconds = divmod(seconds, 60)
     if days > 0:
@@ -46,7 +86,7 @@ def _pretty_time_delta(timedelta):
     elif hours > 0:
         return '%d hours %d minutes' % (hours, minutes)
     elif minutes > 0:
-        return '%d minutes' % (minutes)
+        return '%d minutes' % (minutes,)
     else:
         return '%ds' % (seconds,)
 
@@ -64,42 +104,36 @@ def _average_timedelta(timedeltas):
     return sum(timedeltas, timedelta(0)) / len(timedeltas)
 
 
-def pipeline_metrics(runs):
-    lead_times = [run.end_time - run.start_time for run in runs if run.successful()]
-    pipeline_failure_rate = (len(runs) - len(lead_times)) / len(runs)
-    deployment_lead_times = [run.deploy_time - run.start_time for run in runs if run.deploy_time is not None]
-
-    pipeline_interval = _interval([run.end_time for run in runs if run.successful()])
-    deployment_interval = _interval([run.deploy_time for run in runs if run.deploy_time])
-
-    pipeline_success_times = [run.end_time for run in runs if run.successful()]
-    pipeline_failure_times = [run.end_time for run in runs if not run.successful()]
-    pipeline_recovery_time = _recovery_time(pipeline_success_times, pipeline_failure_times)
-
-    deployment_recovery_time = _recovery_time([run.deploy_time for run in runs if run.deploy_time], [])
-
-    return PipelineMetrics(pipeline_lead_time=_average_timedelta(lead_times),
-                           pipeline_failure_rate=pipeline_failure_rate,
-                           pipeline_interval=pipeline_interval,
-                           pipeline_recovery_time=pipeline_recovery_time,
-                           deployment_lead_time=_average_timedelta(deployment_lead_times),
-                           deployment_failure_rate=0.0,
-                           deployment_interval=deployment_interval,
-                           deployment_recovery_time=deployment_recovery_time
-                           )
-
-
-def _interval(end_times):
-    intervals = [(t2-t1) for (t1, t2) in _pairwise(end_times)]
+def _interval(end_times, office_hours=None):
+    intervals = _intervals(_pairwise(end_times), office_hours)
     return _average_timedelta(intervals)
 
 
-def _recovery_time(success_times, failure_times):
+def _intervals(pairs, office_hours):
+    intervals = []
+    for (t1, t2) in pairs:
+        if office_hours:
+            interval = office_hours.interval(t1, t2)
+        else:
+            interval = t2 - t1
+        intervals.append(interval)
+    return intervals
+
+
+def _recovery_time(success_times, failure_times, office_hours=None):
     recovery_times = []
     for end_time in failure_times:
         following_successes = dropwhile(lambda t:t < end_time, success_times)
-        if following_successes:
-            recovery_times.append(next(following_successes) - end_time)
+        try:
+            next_success = next(following_successes)
+            if next_success:
+                if office_hours:
+                    interval = office_hours.interval(end_time, next_success)
+                else:
+                    interval = next_success - end_time
+                recovery_times.append(interval)
+        except StopIteration:
+            pass
     if recovery_times:
         return _average_timedelta(recovery_times)
     else:
