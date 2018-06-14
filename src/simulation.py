@@ -11,7 +11,7 @@ def run_simulation(start_date, stages, commits, deployer):
 
     runs = pipeline.simulation(start_time=now + timedelta(minutes=5),
                                commits=commits,
-                               duration=timedelta(days=21))
+                               duration=timedelta(days=31))
     return runs
 
 def print_runs(name, stages, runs):

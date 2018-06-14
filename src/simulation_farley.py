@@ -8,10 +8,10 @@ from simulation import run_simulation, print_runs
 from stages import Stage
 
 stages = [
-    Stage("Commit Stage", duration=timedelta(minutes=3), failure_rate=0.2),
-    Stage("Automated Acceptance Test", duration=timedelta(minutes=20), failure_rate=0.2, single_threaded=True),
-    Stage("Performance Test", duration=timedelta(minutes=20), failure_rate=0.2, single_threaded=True),
-    Stage("Internal Release", duration=timedelta(minutes=4), failure_rate=0.02, single_threaded=True),
+    Stage("Commit Stage", duration=timedelta(minutes=3), failure_rate=0.005),
+    Stage("Automated Acceptance Test", duration=timedelta(minutes=20), failure_rate=0.01),
+    Stage("Performance Test", duration=timedelta(minutes=20), failure_rate=0.01),
+    Stage("Internal Release", duration=timedelta(minutes=4), failure_rate=0.01, single_threaded=True),
 ]
 
 start_time = datetime(year=2017,month=12,day=11,hour=8)
@@ -26,3 +26,4 @@ print_runs("simulation_farley", stages, runs)
 metrics_calc = MetricsCalculator(runs)
 metrics = metrics_calc.metrics()
 print_metrics("simulation_farley", metrics)
+print(metrics.pretty_print())

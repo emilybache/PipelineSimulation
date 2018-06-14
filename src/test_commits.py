@@ -1,6 +1,8 @@
 from datetime import datetime
 
-from commits import generate_commits, skip_nights_and_weekends
+from commits import generate_commits, skip_nights_and_weekends, generate_commits_to_deadline, \
+    generate_commits_to_weekly_deadline
+from util import OfficeHours, next_day_of_week
 
 
 def test_generate_commits():
@@ -21,11 +23,27 @@ def test_generate_commits_during_working_hours():
 
 def test_skip_nights():
     start_time = datetime(year=2018,month=4,day=3,hour=18)
-    next_time = skip_nights_and_weekends(start_time, 8, 18)
+    next_time = skip_nights_and_weekends(start_time, OfficeHours())
     assert next_time == datetime(year=2018, month=4, day=4, hour=8)
 
 
 def test_skip_weekends():
     friday = datetime(year=2018,month=6,day=1,hour=18)
-    next_time = skip_nights_and_weekends(friday, 8, 18)
+    next_time = skip_nights_and_weekends(friday, OfficeHours())
     assert next_time == datetime(year=2018,month=6,day=4,hour=8)
+
+
+def test_generate_commits_to_deadline():
+    deadline = datetime(year=2018, month=6, day=1, hour=18)
+    now = datetime(year=2018, month=6, day=1, hour=17)
+    commits = generate_commits_to_deadline(10, now, deadline)
+    assert len(commits) > 1
+    for commit in commits:
+        assert commit.time < deadline
+        assert commit.time >= now
+
+def test_generate_commits_to_weekly_deadline():
+    now = datetime(year=2018, month=6, day=14, hour=17)
+    commits = generate_commits_to_weekly_deadline(10, now, 1)
+    assert len(commits) <= 10
+
