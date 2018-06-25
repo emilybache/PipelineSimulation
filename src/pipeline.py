@@ -29,6 +29,7 @@ class PipelineRun:
         return self.stage_results[-1].status == StageStatus.ok
 
 
+
 @dataclass(eq=True)
 class Pipeline:
     stages: list = field(default_factory=list)

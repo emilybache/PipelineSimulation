@@ -30,13 +30,13 @@ def scheduled_stage():
 
 
 now = datetime(year=2018,month=4,day=3,hour=8)
-commit1 = Commit("#001", 1, time=now - timedelta(minutes=10))
-commit2 = Commit("#002", 2, time=now - timedelta(minutes=5))
-commit3 = Commit("#003", 3, time=now + timedelta(minutes=5))
+commit1 = Commit(1, time=now - timedelta(minutes=10))
+commit2 = Commit(2, time=now - timedelta(minutes=5))
+commit3 = Commit(3, time=now + timedelta(minutes=5))
 
 
 def test_str():
-    assert "Pipeline Run(2018-04-03 08:00:00, 2018-04-03 08:10:00, [Commit(name='#001', counter=1, time=datetime.datetime(2018, 4, 3, 7, 50))], [ok], )"\
+    assert "Pipeline Run(2018-04-03 08:00:00, 2018-04-03 08:10:00, [Commit(name='#0001', time=datetime.datetime(2018, 4, 3, 7, 50))], [ok], )"\
            == str(PipelineRun(start_time=now,
                        end_time=now + timedelta(minutes=10),
                        changes_included=[commit1],

@@ -8,19 +8,25 @@ from util import next_weekday, OfficeHours, next_day_of_week
 
 @dataclass
 class Commit:
-    name: str
     counter: int
     time: datetime
 
+    @property
+    def name(self):
+        return "#{num:04d}".format(num=self.counter)
+
     def __str__(self):
         return self.name
+
+    def __repr__(self):
+        return "Commit(name='{}', time={})".format(self.name, self.time.__repr__())
 
 
 def generate_commits(count, now, max_interval, offset=1):
     commits = []
     office_hours = OfficeHours()
     for i in range(offset, offset+count):
-        commit = Commit("#{num:04d}".format(num=i), i, now)
+        commit = Commit(i, now)
         now = now + timedelta(minutes=randint(2, max_interval))
         now = skip_nights_and_weekends(now, office_hours)
         commits.append(commit)
@@ -59,7 +65,7 @@ def generate_commits_to_deadline(count, now, deadline, offset=1):
         now = skip_nights_and_weekends(now, office_hours)
         if now > deadline:
             break
-        commit = Commit("#{num:04d}".format(num=i), i, now)
+        commit = Commit(i, now)
         commits.append(commit)
 
     return commits
