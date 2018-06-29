@@ -211,3 +211,30 @@ def test_deploy_interval():
     assert intervals == _intervals(pairs, None)
     assert _average_timedelta(intervals) == timedelta(days=(10/8.0))
     assert timedelta(days=(10/8.0)) == _interval(deploy_times)
+
+
+def test_failing_metrics_ignore_skipped():
+    start_time = datetime(year=2017,month=12,day=11,hour=8)
+
+    run1 = PipelineRun(start_time=start_time,
+                       end_time=start_time + timedelta(minutes=10),
+                       stage_results=[StageRun(StageStatus.ok)],
+                       )
+    run2 = PipelineRun(start_time=start_time + timedelta(minutes=10),
+                       end_time=start_time + timedelta(minutes=20),
+                       stage_results=[StageRun(StageStatus.fail)],
+                       )
+    run3 = PipelineRun(start_time=start_time + timedelta(minutes=20),
+                       end_time=start_time + timedelta(minutes=30),
+                       stage_results=[StageRun(StageStatus.ok)],
+                       )
+    run4 = PipelineRun(start_time=start_time + timedelta(minutes=30),
+                       end_time=start_time + timedelta(minutes=40),
+                       stage_results=[StageRun(StageStatus.skip)],
+                       )
+    runs = [run1, run2, run3, run4]
+    metrics = pipeline_metrics(runs)
+    assert metrics.pipeline_lead_time == timedelta(minutes=10)
+    assert metrics.pipeline_failure_rate == pytest.approx(0.25, 0.01)
+    assert metrics.pipeline_interval == timedelta(minutes=20)
+    assert metrics.pipeline_recovery_time == timedelta(minutes=10)

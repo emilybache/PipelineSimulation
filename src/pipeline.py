@@ -28,7 +28,9 @@ class PipelineRun:
     def successful(self):
         return self.stage_results[-1].status == StageStatus.ok
 
-
+    def failed(self):
+        statuses = [stage.status for stage in self.stage_results]
+        return StageStatus.fail in statuses
 
 @dataclass(eq=True)
 class Pipeline:

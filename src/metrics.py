@@ -44,7 +44,7 @@ class MetricsCalculator:
         self.office_hours = OfficeHours()
         self.deploys = [run for run in self.runs if run.deploy_time is not None]
         self.successful_runs = [run for run in runs if run.successful()]
-        self.unsuccessful_runs = [run for run in runs if not run.successful()]
+        self.failed_runs = [run for run in runs if run.failed()]
 
     def metrics(self):
         deployment_lead_times = [run.deploy_time - run.start_time for run in self.deploys]
@@ -53,9 +53,9 @@ class MetricsCalculator:
         deployment_recovery_time = _recovery_time(successful_deploy_times, [])
 
         lead_times = [run.end_time - run.start_time for run in self.successful_runs]
-        pipeline_failure_rate = (len(self.runs) - len(self.successful_runs)) / len(self.runs)
+        pipeline_failure_rate = len(self.failed_runs) / len(self.runs)
         pipeline_success_times = [run.end_time for run in self.successful_runs]
-        pipeline_failure_times = [run.end_time for run in self.unsuccessful_runs]
+        pipeline_failure_times = [run.end_time for run in self.failed_runs]
         pipeline_interval = _interval(pipeline_success_times, self.office_hours)
         pipeline_recovery_time = _recovery_time(pipeline_success_times, pipeline_failure_times, self.office_hours)
 

@@ -37,10 +37,11 @@ def test_generate_commits_to_deadline():
     deadline = datetime(year=2018, month=6, day=1, hour=18)
     now = datetime(year=2018, month=6, day=1, hour=17)
     commits = generate_commits_to_deadline(10, now, deadline)
-    assert len(commits) > 1
+    assert len(commits) >= 1
     for commit in commits:
         assert commit.time < deadline
         assert commit.time >= now
+
 
 def test_generate_commits_to_weekly_deadline():
     now = datetime(year=2018, month=6, day=14, hour=17)

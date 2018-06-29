@@ -164,3 +164,8 @@ def test_one_stage_with_deployment(passing_stage):
                         )
                ) == str(runs[0])
 
+
+def test_failing(failing_stage):
+    pipeline = Pipeline([failing_stage, failing_stage])
+    runs = pipeline.simulation(now, [commit1], timedelta(minutes=10))
+    assert runs[0].failed()
