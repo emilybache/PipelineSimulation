@@ -2,6 +2,7 @@
 *.pyc
 .cache
 .idea
+.venv
 *.csv
 .pytest_cache
 src/.pytest_cache
